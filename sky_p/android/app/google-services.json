@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "207628892415",
+    "firebase_url": "https://atm-energy-7740b-default-rtdb.firebaseio.com",
+    "project_id": "atm-energy-7740b",
+    "storage_bucket": "atm-energy-7740b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:207628892415:android:4bccb2702198a35e2974ca",
+        "android_client_info": {
+          "package_name": "com.example.flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAw-7xuu4oJYkEQkbYuyveRKhFyvdLuzMA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:207628892415:android:14c5421661944cb22974ca",
+        "android_client_info": {
+          "package_name": "com.example.sky_p"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAw-7xuu4oJYkEQkbYuyveRKhFyvdLuzMA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

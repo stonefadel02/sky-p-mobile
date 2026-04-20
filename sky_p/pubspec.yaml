@@ -1,0 +1,89 @@
+name: sky_p
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.10.4 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.20.2
+  mobile_scanner: ^7.1.4
+  qr_flutter: ^4.1.0
+  http: ^1.6.0
+  cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.2
+  flutter_native_splash: ^2.4.7
+  flutter_speed_dial: ^7.0.0
+  google_fonts: ^6.1.0
+  kkiapay_flutter_sdk: ^1.3.4
+  shared_preferences: ^2.5.4
+  webview_flutter: ^4.13.1
+  flutter_launcher_icons: ^0.14.4
+  dio: ^5.9.1
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
+  quickalert: ^1.1.0
+  jwt_decoder: ^2.0.1
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  pinput: ^5.0.0
+  firebase_database: ^12.1.3
+  firebase_messaging: ^16.1.1
+  flutter_local_notifications: ^20.1.0
+  rename_app: ^1.6.5
+  animated_icon: ^1.0.0
+  carousel_slider: ^5.1.2
+  animated_widgets: ^1.1.0
+  lottie: ^3.3.2
+  firebase_crashlytics: ^5.0.8
+  firebase_analytics: ^12.1.3
+  custom_quick_alert: ^2.1.1
+  google_maps_flutter: ^2.15.0
+  flutter_map: ^8.2.2
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  flutter_screenutil: ^5.9.3
+  signature: ^6.3.0
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  uuid: ^4.5.3
+  flutter_dotenv: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/logo.jpeg 
+  android_12:
+    color: "#FFFFFF"
+    image: assets/splash.png
+  fullscreen: true    
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/splash.png
+    - assets/logoremovebg.png
+    - assets/logo.jpeg
+    - assets/lotties/no_internet.json
+    - assets/lotties/empty_box.json 
+    - .env.local
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.jpeg"
+  adaptive_icon_foreground: "assets/lion_foreground.png"
+  remove_alpha_ios: true 
+  notification_icon:
+    enabled: true
+    image_path: "assets/notification_icon.png"
