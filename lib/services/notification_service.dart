@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
@@ -29,22 +32,41 @@ class NotificationService {
 
     Set<String> processedKeys = {};
 
-ref.onChildAdded.listen((event) {
-  final key = event.snapshot.key;
+    ref.onChildAdded.listen((event) {
+      final key = event.snapshot.key;
 
-  if (key == null || processedKeys.contains(key)) return;
-  processedKeys.add(key);
+      if (key == null || processedKeys.contains(key)) return;
+      processedKeys.add(key);
 
-  if (event.snapshot.value != null) {
-    final value = Map<String, dynamic>.from(
-      event.snapshot.value as Map,
-    );
+      if (event.snapshot.value != null) {
+        final value = Map<String, dynamic>.from(event.snapshot.value as Map);
 
-    _controller.add(value);
+        _controller.add(value);
 
-    // 🔥 IMPORTANT : supprimer après traitement
-    event.snapshot.ref.remove();
+        // 🔥 IMPORTANT : supprimer après traitement
+        event.snapshot.ref.remove();
+      }
+    });
   }
-});
+
+Future<String> downloadAndSaveFile(String url, String fileName) async {
+  final directory = await getApplicationDocumentsDirectory();
+  
+  // Extraction propre de l'extension
+  final uri = Uri.parse(url);
+  final String rawExt = uri.pathSegments.last.split('.').last;
+  final String extension = rawExt.isNotEmpty ? rawExt : 'jpg';
+  
+  // Nom unique pour éviter le cache d'une ancienne image
+  final String filePath = '${directory.path}/${fileName}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+  
+  final response = await http.get(Uri.parse(url));
+  if (response.statusCode != 200) {
+    throw Exception("Échec téléchargement image : ${response.statusCode}");
   }
+  
+  final file = File(filePath);
+  await file.writeAsBytes(response.bodyBytes);
+  return filePath;
+}
 }

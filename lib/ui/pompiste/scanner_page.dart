@@ -2,11 +2,11 @@ import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:flutter/material.dart';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/header.dart';
 import 'package:sky_p/ui/widgets/appBarGeneral.dart';
 
@@ -55,6 +55,7 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
     await cameraController.stop();
 
     String cleanSignature = code.trim();
+    print("📡 [DEBUG SCANNER] Code scanné : '$cleanSignature'");
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -70,36 +71,41 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
       }
 
       final String apiUrl = ApiConfig.validateTicket(cleanSignature);
+      print("📡 [DEBUG SCANNER] URL de validation (POST) : $apiUrl");
 
-     
       final header = await ApiHeaders.getHeaders();
-      final response = await http
-          .get(
-            Uri.parse(apiUrl),
-            headers: header,
-          )
-          .timeout(const Duration(seconds: 50));
+      print("📡 [DEBUG SCANNER] En-têtes envoyés : $header");
+
+      final response = await IgsHttpClient.post(
+        Uri.parse(apiUrl),
+        headers: header,
+      ).timeout(const Duration(seconds: 50));
+
+      print("📡 [DEBUG SCANNER] Code Statut : ${response.statusCode}");
+      print("📡 [DEBUG SCANNER] Content-Type : ${response.headers['content-type']}");
+      print("📡 [DEBUG SCANNER] Corps de réponse brut : ${response.body}");
 
       // Vérification du JSON
       if (response.headers['content-type']?.contains('application/json') ??
           false) {
         final data = jsonDecode(response.body);
-        print("RÉPONSE API : $data");
+        print("📡 [DEBUG SCANNER] Données décodées : $data");
 
         if (response.statusCode == 200) {
           _showTicketDetailsSheet(data);
         } else {
           // ERREUR MÉTIER : Ticket utilisé ou expiré
-          _showCustomError(
-            _getFriendlyErrorMessage(data['message'] ?? "Invalide"),
-          );
+          final String apiMsg = data['message']?.toString() ?? "Invalide";
+          _showCustomError(_getFriendlyErrorMessage(apiMsg));
         }
       } else {
         // ERREUR SERVEUR (404, 500, etc.)
-        _showCustomError("Impossible de valider ce ticket pour le moment.");
+        _showCustomError("Impossible de valider ce ticket pour le moment (${response.statusCode}).");
       }
-    } catch (e) {
-      _showCustomError("Erreur de connexion. Vérifiez votre internet.");
+    } catch (e, stack) {
+      print("❌ [DEBUG SCANNER ERREUR] Exception : $e");
+      print("❌ [DEBUG SCANNER STACK] : $stack");
+      _showCustomError("Erreur de connexion. Vérifiez votre internet. ($e)");
     } finally {
       if (mounted) setState(() => isProcessing = false);
     }

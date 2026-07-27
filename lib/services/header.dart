@@ -1,12 +1,12 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sky_p/config/api_config.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sky_p/config/api_config.dart';
 
 class ApiHeaders {
-  static Future<Map<String, String>> getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('token');
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
+  static Future<Map<String, String>> getHeaders() async {
+    final String? token = await _secureStorage.read(key: 'access_token');
     return {
       "Authorization": "Bearer $token",
       "Accept": "application/json",

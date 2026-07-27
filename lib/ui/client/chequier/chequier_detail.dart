@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/services/api_service.dart';
@@ -176,15 +177,43 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           actions: [
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
-              onSelected: (value) {
-                if (value == 'download') {
-                  ExportService().downloadExport(
-                    context,
-                    "${ApiConfig.baseUrl}/chequiers/${widget.groupId}/export",
-                    "Chequier_${widget.groupId}",
-                  );
-                }
-              },
+              onSelected: (value) async {
+  if (value == 'download') {
+    final exportUrl = "${ApiConfig.baseUrl}/chequiers/${widget.groupId}/export";
+    
+    // --- BLOC DE DEBUG ---
+    print("--- TENTATIVE D'EXPORT ---");
+    print("URL d'export : $exportUrl");
+    print("ID du groupe utilisé : ${widget.groupId}");
+    
+    try {
+      // On récupère les headers pour voir si le Token est bien là
+      final headers = await ApiHeaders.getHeaders();
+      print("Headers envoyés : $headers");
+
+      // On fait un test manuel avant de laisser le service de téléchargement prendre le relais
+      final testResponse = await http.get(Uri.parse(exportUrl), headers: headers);
+      
+      print("Code de réponse : ${testResponse.statusCode}");
+      print("Corps de réponse (si erreur) : ${testResponse.body}");
+      
+      if (testResponse.statusCode == 200) {
+        print("Succès ! Lancement du téléchargement réel...");
+        // Si le test est OK, on lance le vrai téléchargement
+        ExportService().downloadExport(
+          context,
+          exportUrl,
+          "Chequier_${widget.groupId}",
+        );
+      } else {
+        print("ERREUR : Le serveur renvoie une erreur sur cette route.");
+      }
+    } catch (e) {
+      print("ERREUR FATALE lors de l'appel : $e");
+    }
+    print("--- FIN DEBUG EXPORT ---");
+  }
+},
               itemBuilder: (BuildContext context) => [
                 PopupMenuItem<String>(
                   value: 'download',
@@ -483,7 +512,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          Icons.local_gas_station,
+                          Icons.business_center,
                           color: canSelect ? igsBlue : Colors.grey,
                         ),
                       ),

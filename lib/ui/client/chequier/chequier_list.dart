@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/services/header.dart';
+import 'package:sky_p/services/auth_service.dart';
 import 'package:sky_p/services/notification_service.dart';
 import 'package:sky_p/ui/client/chequier/chequier_detail.dart';
 import 'package:sky_p/ui/client/chequier/requestChequierform.dart';
@@ -99,6 +100,7 @@ class _GroupListPageState extends State<GroupListPage> {
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
+              await AuthService.clearAll();
               if (!mounted) return;
               Navigator.pushNamedAndRemoveUntil(
                 context,
@@ -225,7 +227,7 @@ class _GroupListPageState extends State<GroupListPage> {
       backgroundColor: bgColor,
       appBar: AppBar(
         toolbarHeight: 160, // Augmenté pour donner de l'espace
-        backgroundColor: igsBlue,
+        backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
         flexibleSpace: SafeArea(
@@ -260,9 +262,9 @@ class _GroupListPageState extends State<GroupListPage> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          "SKY-P",
+                          "",
                           style: GoogleFonts.montserrat(
-                            color: Colors.white,
+                            color: igsBlue,
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
@@ -272,7 +274,7 @@ class _GroupListPageState extends State<GroupListPage> {
                     IconButton(
                       icon: const Icon(
                         Icons.logout_rounded,
-                        color: Colors.white,
+                        color: igsBlue,
                       ),
                       onPressed: _logoutWithConfirmation,
                     ),
@@ -288,7 +290,7 @@ class _GroupListPageState extends State<GroupListPage> {
                     Text(
                       "MES CHÉQUIERS",
                       style: GoogleFonts.montserrat(
-                        color: Colors.white,
+                        color: igsBlue,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
@@ -307,7 +309,7 @@ class _GroupListPageState extends State<GroupListPage> {
                         width: 45,
                         height: 45,
                         decoration: const BoxDecoration(
-                          color: igsYellow,
+                          color: Colors.grey,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(color: Colors.black12, blurRadius: 4),
@@ -333,7 +335,7 @@ class _GroupListPageState extends State<GroupListPage> {
           Container(
             height: 80, // S'arrête juste après les filtres
             width: double.infinity,
-            color: igsBlue,
+            color: Colors.white,
           ),
           Column(
             children: [
@@ -384,7 +386,7 @@ class _GroupListPageState extends State<GroupListPage> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: igsBlue.withOpacity(0.2),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -406,7 +408,7 @@ class _GroupListPageState extends State<GroupListPage> {
           margin: const EdgeInsets.all(5),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? igsBlue : Colors.transparent,
             borderRadius: BorderRadius.circular(25),
           ),
           child: Text(
@@ -414,7 +416,7 @@ class _GroupListPageState extends State<GroupListPage> {
             style: GoogleFonts.montserrat(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isSelected ? igsBlue : Colors.white,
+              color: isSelected ? Colors.white : igsBlue,
             ),
           ),
         ),
@@ -462,7 +464,7 @@ class _GroupListPageState extends State<GroupListPage> {
                 width: 6,
                 decoration: BoxDecoration(
                   color: _selectedFilter == 'approved'
-                      ? (isValable ? igsYellow : Colors.red)
+                      ? (isValable ? Colors.grey : Colors.red)
                       : (_selectedFilter == 'pending'
                             ? Colors.orange
                             : Colors.red),

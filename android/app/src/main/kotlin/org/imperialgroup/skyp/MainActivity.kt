@@ -1,4 +1,4 @@
-package com.example.sky_p
+package org.imperialgroup.skyp
 
 import io.flutter.embedding.android.FlutterActivity
 

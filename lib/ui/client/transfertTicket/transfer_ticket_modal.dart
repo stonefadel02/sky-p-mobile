@@ -2,11 +2,11 @@ import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:sky_p/config/api_config.dart';
 import 'dart:convert';
 
 import 'package:sky_p/services/header.dart';
+import 'package:sky_p/services/api_service.dart';
 
 class TransferTicketModal extends StatefulWidget {
   final List<Map<String, dynamic>> selectedTickets;
@@ -60,7 +60,7 @@ class _TransferTicketModalState extends State<TransferTicketModal> {
       // 2. Boucle de transfert vers ton API PHP
       for (var ticket in widget.selectedTickets) {
          final header = await ApiHeaders.getHeaders();
-        final response = await http.post(
+        final response = await IgsHttpClient.post(
           Uri.parse("${ApiConfig.baseUrl}/tickets/${ticket['id']}/transfer"),
           headers: header,
           body: jsonEncode({"email": _emailController.text.trim()}),

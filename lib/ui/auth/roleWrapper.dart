@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/services/notification_service.dart';
 import 'package:sky_p/ui/widgets/appBarGeneral.dart';
 
 class RoleWrapper extends StatefulWidget {
@@ -19,18 +21,26 @@ class _RoleWrapperState extends State<RoleWrapper> {
   @override
   void initState() {
     super.initState();
-    // _setupLocalNotifications();
-    // _initNotificationCheck();
-    // _setupFCM(); // ✅ Ajoute
+    _setupLocalNotifications();
+    _initNotificationCheck();
+    _setupFCM(); // ✅ Ajoute
   }
 
   Future<void> _setupFCM() async {
     // ✅ Uniquement le listener foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null && mounted) {
+        String? img = message.data['image'];
+        if (img != null && img.isNotEmpty && !img.startsWith('http')) {
+        // On utilise l'URL de ton API définie dans ta config
+        img = "${ApiConfig.baseUrl1}/$img"; 
+      }
+
+      print("🖼️ URL finale pour notification : $img");
         _showSystemNotification(
           message.notification!.title ?? "IGS Update",
           message.notification!.body ?? "",
+          imageUrl: img,
         );
       }
     });
@@ -70,31 +80,46 @@ class _RoleWrapperState extends State<RoleWrapper> {
         ?.requestNotificationsPermission();
   }
 
-  Future<void> _showSystemNotification(String title, String body) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'igs_high_importance_channel',
-          'Transferts IGS',
-          channelDescription: 'Notifications pour les transferts IGS',
-          importance: Importance.max,
-          priority: Priority.high,
-          playSound: true,
-          enableVibration: true,
-          color: Color(0xFF3473E4),
-        );
+  // Dans RoleWrapper
+Future<void> _showSystemNotification(String title, String body, {String? imageUrl}) async {
+    BigPictureStyleInformation? bigPictureStyle;
+String? picturePath;
 
-    const NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
+    // Si une image est présente, on la télécharge et on configure le style
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        print("🚀 Tentative de téléchargement image : $imageUrl");
+        final String picturePath = await NotificationService().downloadAndSaveFile(imageUrl, 'notif_img');
+        print("✅ Image sauvegardée à : $picturePath");
+        bigPictureStyle = BigPictureStyleInformation(
+          FilePathAndroidBitmap(picturePath),
+          largeIcon: FilePathAndroidBitmap(picturePath),
+          contentTitle: title,
+          summaryText: body,
+        );
+      } catch (e) {
+        debugPrint("Erreur téléchargement image notification: $e");
+      }
+    }
+
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'igs_high_importance_channel',
+      'Transferts IGS',
+      importance: Importance.max,
+      priority: Priority.high,
+      styleInformation: bigPictureStyle, // Sera null si pas d'image
+      color: const Color(0xFF3473E4),
+      largeIcon: picturePath != null ? FilePathAndroidBitmap(picturePath) : null,
+      
     );
 
-    // ✅ DOC V20 : show() avec arguments nommés
     await flutterLocalNotificationsPlugin.show(
       id: DateTime.now().millisecondsSinceEpoch % 10000,
       title: title,
       body: body,
-      notificationDetails: platformDetails,
+      notificationDetails: NotificationDetails(android: androidDetails),
     );
-  }
+}
 
 Future<void> _initNotificationCheck() async {
   final prefs = await SharedPreferences.getInstance();
@@ -128,8 +153,12 @@ Future<void> _initNotificationCheck() async {
     final Map<String, dynamic> data = Map<String, dynamic>.from(value as Map);
     final String title = data['title'] ?? "🎫 Nouveau ticket ATM Energy !";
     final String body = data['body'] ?? "Vous avez reçu un nouveau ticket";
+    String? imageUrl = data['image'];
+  if (imageUrl != null && !imageUrl.startsWith('http')) {
+    imageUrl = "${ApiConfig.baseUrl1}/$imageUrl"; 
+  }
 
-    _showSystemNotification(title, body);
+    _showSystemNotification(title, body, imageUrl: imageUrl);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/services/download.dart';
 import 'package:sky_p/services/header.dart';
+import 'package:sky_p/services/api_service.dart';
 
 
 class TicketUsagePage extends StatefulWidget {
@@ -88,7 +88,7 @@ void _loadExistingTicket() {
           .toList();
       final header = await ApiHeaders.getHeaders();
 
-      final response = await http.post(
+      final response = await IgsHttpClient.post(
         Uri.parse("${ApiConfig.baseUrl}/tickets/group"),
         headers: header,
         body: json.encode({"ticket_ids": ticketIds}),
@@ -226,7 +226,7 @@ void _loadExistingTicket() {
           ),
           const SizedBox(height: 15),
           Text(
-            "Présentez ce code au pompiste",
+            "Présentez ce code a l'agent SKY-P",
             style: GoogleFonts.montserrat(
               fontSize: 14,
               color: Colors.black87,

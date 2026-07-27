@@ -172,7 +172,7 @@ class _TicketListPageState extends State<TicketListPage> {
           heroTag: 'unique_ticket_fab',
           onPressed: () async {
             // 1. On attend le retour de la page
-            final result = await Navigator.push(
+            await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CreateTicketPage()),
             );

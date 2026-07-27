@@ -3,20 +3,19 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ServiceGrid extends StatelessWidget {
   final VoidCallback onTicketTap;
-  final VoidCallback onTransferTap;
   final VoidCallback? onEssenceTap;
   final VoidCallback? onGasoilTap;
 
   const ServiceGrid({
     super.key,
     required this.onTicketTap,
-    required this.onTransferTap,
     this.onEssenceTap,
     this.onGasoilTap,
   });
 
-  // Définition de la couleur Jaune IGS pour la réutiliser
-  static const Color igsYellow = Color(0xFFF89945);
+  // Utilisation de tes couleurs de marque sauvegardées
+  static const Color igsBlue = Color(0xFF3473E4); //
+  static const Color igsYellow = Color(0xFFFCBF01); //
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +27,7 @@ class ServiceGrid extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Text(
             "Que voulez-vous faire ?",
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.montserrat( //
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -36,37 +35,23 @@ class ServiceGrid extends StatelessWidget {
           ),
         ),
 
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // On divise la largeur totale par 4 pour que ça s'adapte comme votre GridView
-            // On retire 20 pour compenser le padding horizontal (10 gauche + 10 droite)
-            double itemWidth = (constraints.maxWidth - 20) / 4;
-
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _scrollableWrapper(_circularItem(Icons.add_card_rounded, "Sky Payment", onEssenceTap ?? () {}), itemWidth),
-                  _scrollableWrapper(_circularItem(Icons.style_outlined, "Chéquiers", onGasoilTap ?? () {}), itemWidth),
-                  _scrollableWrapper(_circularItem(Icons.qr_code_scanner_rounded, "Tickets Express", onTicketTap), itemWidth),
-                  _scrollableWrapper(_circularItem(Icons.local_gas_station_rounded, "Go Fuel", onTransferTap), itemWidth),
-                ],
-              ),
-            );
-          },
+        // --- GRILLE JUSTIFIÉE ---
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            // C'est ici que la magie opère pour "justifier" les éléments
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Utilisation de Expanded ou Flexible pour que chaque item prenne sa place
+              Expanded(child: _circularItem(Icons.add_card_rounded, "Sky Payment", onEssenceTap ?? () {})),
+              Expanded(child: _circularItem(Icons.style_outlined, "Chéquiers", onGasoilTap ?? () {})),
+              Expanded(child: _circularItem(Icons.qr_code_scanner_rounded, "Tickets Express", onTicketTap)),
+              // Ajoute le 4ème ici si besoin, il se placera automatiquement
+            ],
+          ),
         ),
       ],
-    );
-  }
-
-  // On passe maintenant la largeur calculée dynamiquement
-  Widget _scrollableWrapper(Widget child, double width) {
-    return SizedBox(
-      width: width, 
-      child: child,
     );
   }
 
@@ -83,30 +68,24 @@ class ServiceGrid extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                // On utilise le jaune IGS avec une légère opacité
                 color: igsYellow.withOpacity(0.15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ],
               ),
               child: Icon(
                 icon,
-                color: igsYellow,
-                size: 26,
+                color: igsYellow, //
+                size: 28, // Taille légèrement augmentée
               ),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              maxLines: 2, // Permet d'éviter de couper le texte
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
+              maxLines: 2,
+              overflow: TextOverflow.visible, // On laisse le texte respirer
+              style: GoogleFonts.montserrat( //
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 color: Colors.black87,
               ),
             ),

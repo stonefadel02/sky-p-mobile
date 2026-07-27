@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/header.dart';
+import 'package:sky_p/services/auth_service.dart';
+import 'package:sky_p/ui/auth/forgot_password_page.dart';
 import 'package:sky_p/ui/auth/roleWrapper.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
@@ -95,6 +97,14 @@ class _LoginPageState extends State<LoginPage> {
           await _sendFcmTokenToBack(token, fcmToken);
         }
 
+        final refreshToken = data['refresh_token'] ?? data['refreshToken'];
+        if (refreshToken != null) {
+          await AuthService.saveTokens(
+            accessToken: token,
+            refreshToken: refreshToken.toString(),
+          );
+        }
+
         // Sauvegarde SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
@@ -159,21 +169,20 @@ class _LoginPageState extends State<LoginPage> {
   // LA FONCTION QUI ENVOIE LE TOKEN AU BACKEND
   Future<void> _sendFcmTokenToBack(String apiToken, String fcmToken) async {
     try {
-
       final response = await http.post(
         Uri.parse(
           "${ApiConfig.baseUrl}/fcm-token",
         ), // Vérifie l'URL avec ton dev back
         headers: {
-      "Authorization": "Bearer $apiToken",
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-      "ngrok-skip-browser-warning": "true",
-      "X-API-KEY": ApiConfig.atmSecretKey,
-      "X-TIMESTAMP": DateTime.now().millisecondsSinceEpoch.toString(),
-      "X-NONCE": const Uuid().v4(),
-    },
+          "Authorization": "Bearer $apiToken",
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "ngrok-skip-browser-warning": "true",
+          "X-API-KEY": ApiConfig.atmSecretKey,
+          "X-TIMESTAMP": DateTime.now().millisecondsSinceEpoch.toString(),
+          "X-NONCE": const Uuid().v4(),
+        },
         body: jsonEncode({"fcm_token": fcmToken}),
       );
 
@@ -251,6 +260,25 @@ class _LoginPageState extends State<LoginPage> {
                 validator: (v) =>
                     (v == null || v.length < 6) ? "Minimum 6 caractères" : null,
               ),
+
+
+              const SizedBox(height: 20),
+              // Entre le champ password et le bouton de connexion
+Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+      );
+    },
+    child: Text(
+      "Mot de passe oublié ?",
+      style: GoogleFonts.montserrat(color: igsBlue, fontWeight: FontWeight.w600),
+    ),
+  ),
+),
 
               const SizedBox(height: 40),
               SizedBox(

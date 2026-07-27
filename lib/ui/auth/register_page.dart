@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/core/utils/form_validators.dart';
@@ -33,7 +36,10 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+File? _logoFile;
+final ImagePicker _picker = ImagePicker();
   // Entreprise / Optionnel
+  bool _acceptTerms = false;
   final _companyNameController = TextEditingController();
   final _ifuController = TextEditingController();
   final _rccmController = TextEditingController();
@@ -58,6 +64,10 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
+  if (!_acceptTerms) {
+    IgsAlerts.showError("Veuillez accepter les conditions d'utilisation pour continuer.");
+    return;
+  }
     setState(() => _isLoading = true);
 
     String phone = _phoneController.text.trim();
@@ -161,91 +171,97 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _sendDataToServer() async {
-    IgsAlerts.showLoading("Création de votre compte en cours...");
-    setState(() => _isLoading = true);
+  IgsAlerts.showLoading("Création de votre compte en cours...");
+  setState(() => _isLoading = true);
 
-    final String registerUrl = "${ApiConfig.baseUrl}/users/new";
-    // final String registerUrl = "${ApiConfig.baseUrl1}/users/new"; // Utilisation de la config
+  final String registerUrl = "${ApiConfig.baseUrl}/users/new";
 
-    try {
-      bool isAgent = _userRoleChoice == 'Agent';
-      String rolesValue = isAgent ? "Agent" : "USER";
+  try {
+    bool isAgent = _userRoleChoice == 'Agent';
+    String rolesValue = isAgent ? "Agent" : "USER";
 
-      Map<String, dynamic> body = {
-        "nom": _nameController.text.trim(),
-        "prenoms": _prenomController.text.trim(),
-        "email": _emailController.text.trim(),
-        "phone": _phoneController.text.trim(),
-        "password": _passwordController.text,
-        "profil": rolesValue,
-        "type": isAgent ? "particulier" : _accountType,
-        "structure": _structureController.text.trim().isEmpty
-            ? null
-            : _structureController.text.trim(),
-        "is_verified": true,
-      };
+    var request = http.MultipartRequest('POST', Uri.parse(registerUrl));
 
-      if (!isAgent && _accountType == 'entreprise') {
-        body.addAll({
-          "company_name": _companyNameController.text.trim(),
-          "ifu": _ifuController.text.trim(),
-          "rccm": _rccmController.text.trim(),
-        });
-      }
-      final response = await http.post(
-        Uri.parse(registerUrl),
-
-        headers: {
+    request.headers.addAll({
       "Accept": "application/json",
-      "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
       "ngrok-skip-browser-warning": "true",
       "X-API-KEY": ApiConfig.atmSecretKey,
       "X-TIMESTAMP": DateTime.now().millisecondsSinceEpoch.toString(),
       "X-NONCE": const Uuid().v4(),
-    },
-        body: jsonEncode(body),
-      );
-      print("Réponse register : ${response.body}");
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        CustomQuickAlert.dismiss(); // Ferme le loading
+    });
 
-        CustomQuickAlert.success(
-          title: "Félicitations !",
-          message: "Votre compte a été créé avec succès. Connectez-vous.",
-          confirmBtnColor: igsBlue,
-          onConfirm: () {
-            // 1. Fermer l'alerte
-            Navigator.of(context, rootNavigator: true).pop();
+    request.fields['nom'] = _nameController.text.trim();
+    request.fields['prenoms'] = _prenomController.text.trim();
+    request.fields['email'] = _emailController.text.trim();
+    request.fields['phone'] = _phoneController.text.trim();
+    request.fields['structure'] = _structureController.text.trim();
+    request.fields['password'] = _passwordController.text;
+    request.fields['profil'] = rolesValue;
+    request.fields['type'] = isAgent ? "particulier" : _accountType;
+    request.fields['is_verified'] = "true";
 
-            Future.delayed(const Duration(milliseconds: 200), () {
-              if (mounted) {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                }
-              }
-            });
-          },
-        );
-      } else {
-        final data = jsonDecode(response.body);
-        CustomQuickAlert.dismiss();
-        IgsAlerts.showError(_getFriendlyRegisterMessage(data));
-      }
-    } catch (e) {
-      CustomQuickAlert.dismiss();
-      IgsAlerts.showError(
-        "Erreur de connexion : impossible de joindre le serveur.",
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (_structureController.text.trim().isNotEmpty) {
+      request.fields['structure'] = _structureController.text.trim();
     }
+
+    if (!isAgent && _accountType == 'entreprise') {
+      request.fields['company_name'] = _structureController.text.trim();
+      request.fields['ifu'] = _ifuController.text.trim();
+      request.fields['rccm'] = _rccmController.text.trim();
+    }
+
+    if (_logoFile != null) {
+      final logoBytes = await _logoFile!.readAsBytes();
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'logo',
+          logoBytes,
+          filename: 'logo_${_nameController.text.trim()}.png',
+          contentType: http.MediaType('image', 'png'),
+        ),
+      );
+    }
+
+    // ✅ Envoi
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+    print("Réponse register : ${response.body}");
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      CustomQuickAlert.dismiss();
+      CustomQuickAlert.success(
+        title: "Félicitations !",
+        message: "Votre compte a été créé avec succès. Connectez-vous.",
+        confirmBtnColor: igsBlue,
+        onConfirm: () {
+          Navigator.of(context, rootNavigator: true).pop();
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted) {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              }
+            }
+          });
+        },
+      );
+    } else {
+      final data = jsonDecode(response.body);
+      CustomQuickAlert.dismiss();
+      IgsAlerts.showError(_getFriendlyRegisterMessage(data));
+    }
+  } catch (e) {
+    CustomQuickAlert.dismiss();
+    IgsAlerts.showError("Erreur de connexion : impossible de joindre le serveur.");
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -263,13 +279,18 @@ class _RegisterPageState extends State<RegisterPage> {
           elevation: 0,
           currentStep: _currentStep,
           onStepContinue: () {
-            if (_formKey.currentState!.validate()) {
-              if (_currentStep < _getSteps().length - 1) {
-                setState(() => _currentStep++);
-              } else {
-                _register();
-              }
-            }
+           if (_validateCurrentStep()) {
+    if (_currentStep < _getSteps().length - 1) {
+      setState(() => _currentStep++);
+    } else {
+      _register();
+    }
+  } else {
+    // Optionnel : un petit message pour l'utilisateur
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Veuillez remplir tous les champs obligatoires de cette étape.")),
+    );
+  }
             // // On valide uniquement les champs de l'étape ACTUELLE
             // if (_validateCurrentStep()) {
             //   if (_currentStep < _getSteps().length - 1) {
@@ -353,7 +374,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: _selectionCardRole(
                 "Agent",
                 "Agent",
-                Icons.local_gas_station_rounded,
+                Icons.support_agent_outlined,
               ),
             ),
             const SizedBox(width: 15),
@@ -383,7 +404,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Expanded(
                 child: _selectionCardType(
                   "entreprise",
-                  "Entreprise",
+                  "Agence de voyage",
                   Icons.business_center_outlined,
                 ),
               ),
@@ -443,7 +464,9 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: _ifuController,
             hint: "Identifiant Fiscal",
             icon: Icons.pin_outlined,
-            validator: (v) => _currentStep == 1 ? FormValidators.ifu(v) : null,
+            validator: (v) => (_currentStep == 1 && _accountType == 'entreprise') 
+      ? FormValidators.ifu(v) 
+      : null,
           ),
           const SizedBox(height: 15),
           RegisterFields.buildInputLabel("RCCM"),
@@ -451,8 +474,9 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: _rccmController,
             hint: "Registre de commerce",
             icon: Icons.assignment_outlined,
-            validator: (v) =>
-                v!.isEmpty ? "Le registe de commerce est obligatoire" : null,
+            validator: (v) => (_currentStep == 1 && _accountType == 'entreprise') 
+      ? (v!.isEmpty ? "Le registre de commerce est obligatoire" : null) 
+      : null,
           ),
           const SizedBox(height: 15),
           RegisterFields.buildInputLabel("Structure / Agence"),
@@ -460,9 +484,12 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: _structureController,
             hint: "Nom de la structure",
             icon: Icons.apartment_rounded,
-            validator: (v) =>
-                v!.isEmpty ? "La structure est obligatoire" : null,
+            validator: (v) => (_currentStep == 1 && _accountType == 'entreprise') 
+      ? (v!.isEmpty ? "La structure est obligatoire" : null) 
+      : null,
           ),
+          const SizedBox(height: 15),
+  _buildLogoPicker(),
         ],
       ],
     );
@@ -499,6 +526,62 @@ class _RegisterPageState extends State<RegisterPage> {
               ? FormValidators.confirmerMotDePasse(_passwordController.text)(v)
               : null,
         ),
+        const SizedBox(height: 30),
+
+        // --- SECTION CONDITIONS D'UTILISATION ---
+        Row(
+          children: [
+            SizedBox(
+              height: 24,
+              width: 24,
+              child: Checkbox(
+                value: _acceptTerms,
+                activeColor: igsBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                onChanged: (val) => setState(() => _acceptTerms = val!),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  // Action pour ouvrir un lien ou une modale avec les CGU
+                  print("Ouverture des conditions d'utilisation");
+                },
+                child: RichText(
+                  text: TextSpan(
+                    style: GoogleFonts.montserrat(
+                      color: darkBrown,
+                      fontSize: 13,
+                    ),
+                    children: [
+                      const TextSpan(text: "Accepter les "),
+                      TextSpan(
+                        text: "conditions d'utilisation",
+                        style: GoogleFonts.montserrat(
+                          color: igsBlue,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Petit message d'erreur si non coché lors de la validation
+        if (_currentStep == 2 && !_acceptTerms && _isLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text(
+              "Vous devez accepter les conditions",
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
       ],
     );
   }
@@ -511,7 +594,7 @@ class _RegisterPageState extends State<RegisterPage> {
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed: _isLoading ? null : details.onStepContinue,
+              onPressed: (_isLoading || (_currentStep == 2 && !_acceptTerms)) ? null : details.onStepContinue,
               style: ElevatedButton.styleFrom(
                 backgroundColor: igsYellow,
                 foregroundColor: darkBrown,
@@ -554,6 +637,64 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+
+  Widget _buildLogoPicker() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      RegisterFields.buildInputLabel("Logo de l'entreprise (Optionnel)"),
+      const SizedBox(height: 10),
+      GestureDetector(
+        onTap: () async {
+          final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+          if (image != null) {
+            setState(() => _logoFile = File(image.path));
+          }
+        },
+        child: Container(
+          height: 100,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: _logoFile != null ? igsBlue : Colors.grey.shade300,
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: _logoFile == null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_photo_alternate_outlined, color: igsBlue),
+                    Text(
+                      "Cliquez pour choisir un logo",
+                      style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                )
+              : Stack(
+                  children: [
+                    Center(child: Image.file(_logoFile!, height: 80)),
+                    Positioned(
+                      top: 5,
+                      right: 5,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _logoFile = null),
+                        child: const CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.red,
+                          child: Icon(Icons.close, size: 15, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    ],
+  );
+}
 
   // (Méthodes de sélection identiques à ton code d'origine pour le design)
   Widget _selectionCardRole(String role, String label, IconData icon) {

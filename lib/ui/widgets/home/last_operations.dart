@@ -239,7 +239,7 @@ class _LastOperationsState extends State<LastOperations> {
             Container(
               width: 6,
               decoration: const BoxDecoration(
-                color: Color(0xffFE8C00), // Ta couleur d'origine
+                color: Color(0xFF3473E4), // Ta couleur d'origine
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
@@ -256,12 +256,12 @@ class _LastOperationsState extends State<LastOperations> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3473E4).withOpacity(0.08),
+                        color: Colors.grey.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.history_toggle_off_rounded, // Icône conservée
-                        color: Color(0xFF3473E4),
+                        color: Colors.grey,
                         size: 28,
                       ),
                     ),

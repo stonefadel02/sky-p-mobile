@@ -2,10 +2,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
   // static const String baseUrl = "http://192.168.1.89:8000/api";
-  // static const String baseUrl1 = "http://192.168.1.89:8000"; 
-  static const String baseUrl = "https://lyricist-corridor-energetic.ngrok-free.dev/api"; 
-  static const String baseUrl1 = "https://lyricist-corridor-energetic.ngrok-free.dev"; 
-static String get atmSecretKey => dotenv.env['APP_SECRET_SKYP'] ?? 'default_key';
+  // static const String baseUrl1 = "http://192.168.1.89:8000";
+  static const String baseUrl = "https://lyricist-corridor-energetic.ngrok-free.dev/api";
+  static const String baseUrl1 = "https://lyricist-corridor-energetic.ngrok-free.dev";
+  // static const String baseUrl = "https://admin.atmenergy.net/api";
+  // static const String baseUrl1 = "https://admin.atmenergy.net";
+
+  static String get atmSecretKey =>
+      dotenv.env['APP_SECRET_SKYP'] ?? 'default_key';
   // Kkiapay Config
   // static const String kkiapayPublicKey = "f00d7849eca15103703e9a469db9df97feebe2d5";
   // static const bool isSandbox = false; // Mettre à false en production
@@ -18,59 +22,60 @@ static String get atmSecretKey => dotenv.env['APP_SECRET_SKYP'] ?? 'default_key'
   static const String requestChequierEndpoint = "$baseUrl/chequiers/request";
   // static String validateTicket(String code) =>
   //     "$code";
-  
+
   // static String validateTicket(String code) {
   //   if (code.startsWith("http")) {
   //     String cleanUrl = code.replaceAll("127.0.0.1", "192.168.1.89")
   //                           .replaceAll("localhost", "192.168.1.89")
   //                           .replaceFirst("http://", "https://");
-      
+
   //     if (!cleanUrl.contains("/validate")) {
   //       if (cleanUrl.endsWith("/")) {
-          
+
   //         cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
   //       }
   //       return "$cleanUrl/validate";
   //     }
   //     return cleanUrl;
   //   }
-    
+
   //   return "$baseUrl/tickets/$code/validate";
   // }
 
   static String validateTicket(String code) {
-  if (code.startsWith("http")) {
-    // 1. On remplace toutes les adresses locales par l'hôte Ngrok actuel
-    // On récupère l'hôte de ton baseUrl (sans le /api)
-    String ngrokHost = "unscooped-unwarrantably-ember.ngrok-free.dev";
-    
-    String cleanUrl = code
-        .replaceAll("127.0.0.1:8000", ngrokHost)
-        .replaceAll("localhost:8000", ngrokHost)
-        .replaceAll("192.168.1.89:8000", ngrokHost)
-        .replaceAll("127.0.0.1", ngrokHost)
-        .replaceAll("localhost", ngrokHost)
-        .replaceAll("192.168.1.89", ngrokHost);
+    if (code.startsWith("http")) {
+      // 1. On remplace toutes les adresses locales par l'hôte Ngrok actuel
+      // On récupère l'hôte de ton baseUrl (sans le /api)
+      String prodHost = "admin.atmenergy.net";
 
-    // 2. On s'assure d'utiliser HTTPS pour Ngrok
-    if (cleanUrl.startsWith("http://")) {
-      cleanUrl = cleanUrl.replaceFirst("http://", "https://");
-    }
+      String cleanUrl = code
+          .replaceAll("127.0.0.1:8000", prodHost)
+          .replaceAll("localhost:8000", prodHost)
+          .replaceAll("192.168.1.89:8000", prodHost)
+          .replaceAll("127.0.0.1", prodHost)
+          .replaceAll("localhost", prodHost)
+          .replaceAll("192.168.1.89", prodHost)
+          .replaceAll("unscooped-unwarrantably-ember.ngrok-free.dev", prodHost);
 
-    // 3. Gestion du point de terminaison /validate
-    if (!cleanUrl.contains("/validate")) {
-      // Nettoyage du slash final pour éviter les doubles //
-      if (cleanUrl.endsWith("/")) {
-        cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
+      // 2. On s'assure d'utiliser HTTPS pour Ngrok
+      if (cleanUrl.startsWith("http://")) {
+        cleanUrl = cleanUrl.replaceFirst("http://", "https://");
       }
-      return "$cleanUrl/validate";
+
+      // 3. Gestion du point de terminaison /validate
+      if (!cleanUrl.contains("/validate")) {
+        // Nettoyage du slash final pour éviter les doubles //
+        if (cleanUrl.endsWith("/")) {
+          cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
+        }
+        return "$cleanUrl/validate";
+      }
+      return cleanUrl;
     }
-    return cleanUrl;
+
+    // Si c'est juste un code brut
+    return "$baseUrl/tickets/$code/validate";
   }
-  
-  // Si c'est juste un code brut
-  return "$baseUrl/tickets/$code/validate";
-}
 }
 
 

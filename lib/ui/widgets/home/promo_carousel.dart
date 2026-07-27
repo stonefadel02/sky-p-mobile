@@ -25,6 +25,8 @@ class PromoCarousel extends StatefulWidget {
 class _PromoCarouselState extends State<PromoCarousel> {
   StreamSubscription? _notifSubscription;
   static const Color igsYellow = Color(0xFFF89945);
+  static const Color igsBlue = Color(0xFF3473E4); //
+
   List<dynamic> annonces = [];
   bool isLoading = true;
 
@@ -201,7 +203,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
                           );
                         }, // Action à définir (ex: ouvrir un lien)
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: igsYellow,
+                          backgroundColor: igsBlue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),

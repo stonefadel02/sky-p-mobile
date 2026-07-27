@@ -11,11 +11,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
 import 'package:sky_p/firebase_options.dart';
 import 'package:sky_p/home_page.dart';
+import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/header.dart';
 import 'package:sky_p/services/notification_service.dart';
 import 'package:sky_p/ui/auth/login_page.dart';
@@ -34,10 +35,11 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final String? token = prefs.getString('token');
+  const secureStorage = FlutterSecureStorage();
+  final String? token = await secureStorage.read(key: 'access_token');
   final bool isLoggedIn = token != null && token.isNotEmpty;
-    runApp(MyApp(isLoggedIn: isLoggedIn));
+  final prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(isLoggedIn: isLoggedIn));
   try {
     await dotenv.load(fileName: ".env.local");
     print("✅ Configuration .env.local chargée");
@@ -66,7 +68,6 @@ void main() async {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-      final String? token = prefs.getString('token');
       final String? email = prefs.getString('user_email');
       if (token != null) {
         // 1. Synchro immédiate au démarrage si le token a changé
@@ -126,7 +127,7 @@ Future<void> syncFcmToken(String apiToken) async {
     // On n'envoie au back que si le token a changé ou n'existe pas en local
     if (currentFcmToken != null && currentFcmToken != storedFcmToken) {
       final header = await ApiHeaders.getHeaders();
-      final response = await http.post(
+      final response = await IgsHttpClient.post(
         Uri.parse("${ApiConfig.baseUrl}/fcm-token"),
         headers: header,
         body: jsonEncode({"fcm_token": currentFcmToken}),

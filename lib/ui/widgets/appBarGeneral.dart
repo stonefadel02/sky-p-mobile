@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:sky_p/home_page.dart';
 import 'package:sky_p/ui/auth/login_page.dart';
+import 'package:sky_p/services/auth_service.dart';
 import 'package:sky_p/ui/client/chequier/chequier_list.dart';
 import 'package:sky_p/ui/client/ticket%20express/ticketListPage.dart';
 import 'package:sky_p/ui/client/transfertTicket/TransferHistory.dart';
@@ -90,6 +91,7 @@ class _MainNavigationState extends State<MainNavigation> {
         Navigator.pop(context);
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
+        await AuthService.clearAll();
         if (!mounted) return;
         Navigator.pushAndRemoveUntil(
           context,

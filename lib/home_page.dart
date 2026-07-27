@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sky_p/core/theme/shimmer.dart';
-import 'package:sky_p/ui/client/goFuel/list_command.dart';
 import 'package:sky_p/ui/client/ticket%20express/create_ticket_page.dart';
 import 'package:sky_p/ui/widgets/home/last_operations.dart';
 import 'package:sky_p/ui/widgets/home/promo_carousel.dart';
@@ -52,7 +51,6 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     ServiceGrid(
                       onTicketTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateTicketPage())),
-                      onTransferTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyOrdersPage())),
                       onEssenceTap: () => debugPrint("Top Up"),
                       onGasoilTap: () => widget.onTabChange(1),
                     ),
