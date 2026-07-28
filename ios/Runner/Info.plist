@@ -70,5 +70,13 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>Cette application utilise l'appareil photo pour scanner les codes QR et prendre des photos.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Cette application nécessite l'accès à la galerie photo pour sélectionner des images.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Cette application utilise votre position pour localiser les services et stations à proximité.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Cette application utilise votre position pour localiser les services et stations à proximité.</string>
 	</dict>
 </plist>
