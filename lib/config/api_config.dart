@@ -3,10 +3,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConfig {
   // static const String baseUrl = "http://192.168.1.89:8000/api";
   // static const String baseUrl1 = "http://192.168.1.89:8000";
-  static const String baseUrl = "https://lyricist-corridor-energetic.ngrok-free.dev/api";
-  static const String baseUrl1 = "https://lyricist-corridor-energetic.ngrok-free.dev";
-  // static const String baseUrl = "https://admin.atmenergy.net/api";
-  // static const String baseUrl1 = "https://admin.atmenergy.net";
+  // static const String baseUrl = "https://lyricist-corridor-energetic.ngrok-free.dev/api";
+  // static const String baseUrl1 = "https://lyricist-corridor-energetic.ngrok-free.dev";
+  static const String baseUrl = "https://admin.atmenergy.net/api";
+  static const String baseUrl1 = "https://admin.atmenergy.net";
 
   static String get atmSecretKey =>
       dotenv.env['APP_SECRET_SKYP'] ?? 'default_key';
