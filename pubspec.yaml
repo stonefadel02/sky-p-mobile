@@ -77,8 +77,9 @@ flutter:
     - assets/logoremovebg.png
     - assets/logo.jpeg
     - assets/lotties/no_internet.json
-    - assets/lotties/empty_box.json 
+    - assets/lotties/empty_box.json
     - .env.local
+    - shorebird.yaml
 
 
 flutter_launcher_icons:
