@@ -76,12 +76,20 @@ class _LoginPageState extends State<LoginPage> {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      dynamic data;
+      try {
+        data = jsonDecode(response.body);
+      } catch (jsonError) {
+        CustomQuickAlert.dismiss();
+        print("Erreur réponse non-JSON (code ${response.statusCode}) : ${response.body}");
+        IgsAlerts.showError("Le serveur a rencontré une erreur (${response.statusCode}). Veuillez réessayer.");
+        return;
+      }
+
       print("Réponse du serveur : $data");
       print("STATUT CONNEXION : ${response.statusCode}");
-      print("CORPS DE RÉPONSE : ${response.body}");
 
-      if (response.statusCode == 200 && data['token'] != null) {
+      if (response.statusCode == 200 && data != null && data['token'] != null) {
         String token = data['token'];
         final user = data['user'];
 
@@ -125,14 +133,12 @@ class _LoginPageState extends State<LoginPage> {
         if (user['structure'] != null) {
           await prefs.setString('user_structure', user['structure']);
         }
-        await prefs.setString('user_email', user['email']);
 
         CustomQuickAlert.dismiss(); // Ferme le loading
 
-        // Dans votre fonction _login(), au moment du succès :
         CustomQuickAlert.success(
           title: "Bienvenue !",
-          message: "Connexion réussie, ravi de vous revoir ${user['prenoms']}",
+          message: "Connexion réussie, ravi de vous revoir ${user['prenoms'] ?? ''}",
           confirmBtnColor: igsBlue,
           onConfirm: () {
             Navigator.of(context, rootNavigator: true).pop();
@@ -148,20 +154,18 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         CustomQuickAlert.dismiss();
 
-        // 2. INTERCEPTION DU MESSAGE DE LA DB
-        String rawError = data['message'] ?? "";
+        // INTERCEPTION DU MESSAGE DE LA DB
+        String rawError = (data is Map && data.containsKey('message')) ? data['message'].toString() : "";
         String customMessage = _getFriendlyMessage(rawError);
 
         IgsAlerts.showError(customMessage);
       }
     } catch (e) {
       CustomQuickAlert.dismiss();
-      print(
-        "ERREUR LOGIN DÉTAILLÉE: $e",
-      ); // Utilise print pour débugger simplement
+      print("ERREUR LOGIN DÉTAILLÉE: $e");
 
       IgsAlerts.showError(
-        "Impossible de joindre le serveur. Vérifiez votre connexion ou l'URL Ngrok.",
+        "Impossible de joindre le serveur. Vérifiez votre connexion internet ($e).",
       );
     }
   }

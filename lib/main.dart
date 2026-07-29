@@ -35,17 +35,18 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  const secureStorage = FlutterSecureStorage();
-  final String? token = await secureStorage.read(key: 'access_token');
-  final bool isLoggedIn = token != null && token.isNotEmpty;
-  final prefs = await SharedPreferences.getInstance();
-  runApp(MyApp(isLoggedIn: isLoggedIn));
   try {
     await dotenv.load(fileName: ".env.local");
     print("✅ Configuration .env.local chargée");
   } catch (e) {
     print("❌ Impossible de charger .env.local : $e");
   }
+
+  const secureStorage = FlutterSecureStorage();
+  final String? token = await secureStorage.read(key: 'access_token');
+  final bool isLoggedIn = token != null && token.isNotEmpty;
+  final prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(isLoggedIn: isLoggedIn));
   await ScreenUtil.ensureScreenSize();
   CustomQuickAlert.initialize(navigatorKey);
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);

@@ -78,5 +78,10 @@
 		<string>Cette application utilise votre position pour localiser les services et stations à proximité.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>Cette application utilise votre position pour localiser les services et stations à proximité.</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>
