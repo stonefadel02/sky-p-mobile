@@ -8,8 +8,14 @@ class ApiConfig {
   static const String baseUrl = "https://admin.atmenergy.net/api";
   static const String baseUrl1 = "https://admin.atmenergy.net";
 
-  static String get atmSecretKey =>
-      dotenv.env['APP_SECRET_SKYP'] ?? '0bd9327357f2c63b57c1adf291ed0ea48c7cd3cd7b8a15cc1958ae21702886cd';
+  static String get atmSecretKey {
+    try {
+      if (dotenv.isInitialized) {
+        return dotenv.env['APP_SECRET_SKYP'] ?? '0bd9327357f2c63b57c1adf291ed0ea48c7cd3cd7b8a15cc1958ae21702886cd';
+      }
+    } catch (_) {}
+    return '0bd9327357f2c63b57c1adf291ed0ea48c7cd3cd7b8a15cc1958ae21702886cd';
+  }
   // Kkiapay Config
   // static const String kkiapayPublicKey = "f00d7849eca15103703e9a469db9df97feebe2d5";
   // static const bool isSandbox = false; // Mettre à false en production
