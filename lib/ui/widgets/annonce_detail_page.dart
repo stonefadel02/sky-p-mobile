@@ -7,162 +7,199 @@ class AnnonceDetailPage extends StatelessWidget {
 
   const AnnonceDetailPage({super.key, this.annonce});
 
-  // Couleurs de ta charte IGS
   static const Color igsBlue = Color(0xFF3473E4);
   static const Color igsYellow = Color(0xFFFCBF01);
-  static const Color lightGrey = Color(0xFFF5F5F5);
+  static const Color ink = Color(0xFF20252B);
+  static const Color canvas = Color(0xFFF7F8FA);
 
   @override
   Widget build(BuildContext context) {
-    // Récupération des données
-    final String titre = annonce?['titre'] ?? "OFFRE SKY-P";
-    final String description = annonce?['description'] ?? "Description de l'offre indisponible pour le moment.";
-    
-    // Image par défaut si l'URL est vide
-    String imageUrl = "https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1000"; 
-    if (annonce != null && annonce!['image_url'] != null) {
-       imageUrl = "${ApiConfig.baseUrl1}/${annonce!['image_url']}";
-    }
+    final title = annonce?['titre']?.toString().trim().isNotEmpty == true
+        ? annonce!['titre'].toString()
+        : 'OFFRE SKY-P';
+    final description = annonce?['description']?.toString().trim().isNotEmpty == true
+        ? annonce!['description'].toString()
+        : "Description de l'offre indisponible pour le moment.";
+    final imagePath = annonce?['image_url']?.toString();
+    final imageUrl = imagePath == null || imagePath.isEmpty
+        ? 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1000'
+        : '${ApiConfig.baseUrl1}/$imagePath';
 
     return Scaffold(
-      backgroundColor: lightGrey,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black), // Style "Modal"
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Détail de l'annonce",
-          style: GoogleFonts.montserrat(
-            color: Colors.black,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. La Photo (Propre, sans texte dessus comme demandé)
-            Container(
-              margin: const EdgeInsets.all(16),
-              height: 250,
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => 
-                    Container(color: Colors.grey[300], child: const Icon(Icons.image)),
-                ),
+      backgroundColor: canvas,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 330,
+            pinned: true,
+            backgroundColor: igsBlue,
+            elevation: 0,
+            leading: Padding(
+              padding: const EdgeInsets.all(8),
+              child: _circleButton(
+                icon: Icons.arrow_back_rounded,
+                onPressed: () => Navigator.pop(context),
               ),
             ),
-
-            // 2. Section Texte (Inspirée de tes cartes de services)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: igsBlue,
+                      child: const Icon(
+                        Icons.image_not_supported_outlined,
+                        color: Colors.white70,
+                        size: 52,
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.08),
+                          Colors.black.withOpacity(0.58),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 22,
+                    right: 22,
+                    bottom: 28,
+                    child: Text(
+                      title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 26,
+                        height: 1.12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 26, 22, 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Badge catégorie
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: igsBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "PROMOTION",
-                      style: GoogleFonts.montserrat(
-                        color: igsBlue,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: igsYellow.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'PROMOTION',
+                          style: GoogleFonts.montserrat(
+                            color: const Color(0xFF9A6500),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
                       ),
-                    ),
+                      const Spacer(),
+                      const Icon(Icons.campaign_outlined, color: igsBlue, size: 22),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // Titre
-                  Text(
-                    titre.toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // Séparateur discret
+                  const SizedBox(height: 24),
                   Container(
-                    height: 2,
-                    width: 40,
-                    color: igsYellow,
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: igsBlue,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  
-                  // Description
+                  const SizedBox(height: 22),
                   Text(
                     description,
                     style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      height: 1.6,
-                      fontWeight: FontWeight.w500,
+                      color: ink.withOpacity(0.72),
+                      fontSize: 15,
+                      height: 1.75,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: igsBlue.withOpacity(0.12)),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: igsBlue.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.storefront_outlined, color: igsBlue),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Comment en profiter ?',
+                                style: GoogleFonts.montserrat(
+                                  color: ink,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Rendez-vous dans la station IGS la plus proche pour profiter de cette offre.',
+                                style: GoogleFonts.montserrat(
+                                  color: ink.withOpacity(0.6),
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // 3. Section d'info supplémentaire (Optionnel - Rue / Station)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: igsYellow),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Rendez-vous dans la station IGS la plus proche pour en profiter.",
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: Colors.black45,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({required IconData icon, required VoidCallback onPressed}) {
+    return Material(
+      color: Colors.black.withOpacity(0.28),
+      shape: const CircleBorder(),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
+        tooltip: 'Retour',
       ),
     );
   }

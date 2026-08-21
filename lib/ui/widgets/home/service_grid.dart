@@ -44,10 +44,8 @@ class ServiceGrid extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Utilisation de Expanded ou Flexible pour que chaque item prenne sa place
-              Expanded(child: _circularItem(Icons.add_card_rounded, "Sky Payment", onEssenceTap ?? () {})),
               Expanded(child: _circularItem(Icons.style_outlined, "Chéquiers", onGasoilTap ?? () {})),
               Expanded(child: _circularItem(Icons.qr_code_scanner_rounded, "Tickets Express", onTicketTap)),
-              // Ajoute le 4ème ici si besoin, il se placera automatiquement
             ],
           ),
         ),

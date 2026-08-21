@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/header.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -126,15 +127,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final errorData = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorData['message'] ?? "Erreur de mise à jour"),
+            content: Text(IgsAlerts.friendlyError(
+              statusCode: response.statusCode,
+              backendMessage: errorData['message']?.toString(),
+              fallback: 'La mise à jour du profil a échoué.',
+            )),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Erreur de connexion au serveur"),
+        SnackBar(
+          content: Text(IgsAlerts.friendlyError(error: e)),
           backgroundColor: Colors.red,
         ),
       );

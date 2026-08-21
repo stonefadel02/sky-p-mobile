@@ -82,7 +82,9 @@ class _LoginPageState extends State<LoginPage> {
       } catch (jsonError) {
         CustomQuickAlert.dismiss();
         print("Erreur réponse non-JSON (code ${response.statusCode}) : ${response.body}");
-        IgsAlerts.showError("Le serveur a rencontré une erreur (${response.statusCode}). Veuillez réessayer.");
+        IgsAlerts.showError(
+          IgsAlerts.friendlyError(statusCode: response.statusCode),
+        );
         return;
       }
 
@@ -164,9 +166,7 @@ class _LoginPageState extends State<LoginPage> {
       CustomQuickAlert.dismiss();
       print("ERREUR LOGIN DÉTAILLÉE: $e");
 
-      IgsAlerts.showError(
-        "Impossible de joindre le serveur. Vérifiez votre connexion internet ($e).",
-      );
+      IgsAlerts.showError(IgsAlerts.friendlyError(error: e));
     }
   }
 

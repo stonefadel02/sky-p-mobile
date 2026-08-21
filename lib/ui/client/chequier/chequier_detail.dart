@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/download.dart';
 import 'package:sky_p/services/header.dart';
@@ -82,23 +82,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       if (response.statusCode == 200) {
         final dynamic decodedData = json.decode(response.body);
         print("Données brutes reçues: $decodedData"); // Log pour debug
-        List<dynamic> rawList = [];
-
-        if (decodedData is Map) {
-          if (decodedData.containsKey('tickets')) {
-            rawList = decodedData['tickets'];
-          } else if (decodedData.containsKey('data')) {
-            rawList = decodedData['data'];
-          }
-        } else if (decodedData is List) {
-          rawList = decodedData;
-        }
+        final rawList = _extractTickets(decodedData);
 
         setState(() {
           tickets = rawList.map((t) {
             String expiry = "N/A";
             if (t['expires_at'] != null && t['expires_at'] is Map) {
-              expiry = t['expires_at']['date'].toString().split(' ')[0];
+              expiry = t['expires_at']['date']?.toString().split(' ')[0] ?? expiry;
+            } else if (t['expires_at'] != null) {
+              expiry = t['expires_at'].toString().split('T')[0];
             }
 
             String natureDetectee =
@@ -109,16 +101,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             return {
               "id": t['id'],
               "code": t['code'] ?? "",
-              "valeur": double.parse(
-                t['price']?.toString() ?? t['ticket_price']?.toString() ?? '0',
-              ),
+              "valeur": _readTicketAmount(t),
               "nature": natureDetectee.toUpperCase(),
               "expiry": expiry,
               "qr_code": t['qr_code'],
-              "valid":
-                  t['used'] == false ||
-                  t['used'] == 0 ||
-                  t['status'] == 'available',
+              "valid": _readValid(t) && !_readUsed(t) &&
+                  (t['status'] == null ||
+                    t['status'].toString().toLowerCase() == 'available'),
               "selected": false,
             };
           }).toList();
@@ -126,16 +115,54 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         });
       } else {
         setState(() {
-          errorMessage = "Erreur serveur: ${response.statusCode}";
+          errorMessage = IgsAlerts.friendlyError(statusCode: response.statusCode);
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        errorMessage = "Erreur: $e";
+        errorMessage = IgsAlerts.friendlyError(error: e);
         isLoading = false;
       });
     }
+  }
+
+  List<Map<String, dynamic>> _extractTickets(dynamic value) {
+    if (value is List) {
+      return value.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    }
+    if (value is Map) {
+      for (final key in ['tickets', 'data', 'items', 'results']) {
+        final extracted = _extractTickets(value[key]);
+        if (extracted.isNotEmpty) return extracted;
+      }
+
+      final indexedTickets = value.values
+          .whereType<Map>()
+          .where((item) => item.containsKey('id'))
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+      if (indexedTickets.isNotEmpty) return indexedTickets;
+    }
+    return [];
+  }
+
+  bool _readUsed(Map<String, dynamic> ticket) {
+    final value = ticket['used'] ?? ticket['is_used'];
+    if (value is bool) return value;
+    return value?.toString().toLowerCase() == 'true' || value?.toString() == '1';
+  }
+
+  bool _readValid(Map<String, dynamic> ticket) {
+    final value = ticket['valid'];
+    if (value == null) return true;
+    if (value is bool) return value;
+    return value.toString().toLowerCase() == 'true' || value.toString() == '1';
+  }
+
+  double _readTicketAmount(Map<String, dynamic> ticket) {
+    final value = ticket['price'] ?? ticket['ticket_price'] ?? ticket['amount'] ?? 0;
+    return double.tryParse(value.toString().replaceAll(',', '.')) ?? 0;
   }
 
   double get totalSelected => tickets
@@ -148,6 +175,391 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (t['valid']) t['selected'] = value ?? false;
       }
     });
+  }
+
+  Future<bool> _confirmGrouping(int selectedCount, double amount) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: igsBlue.withOpacity(0.11),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.merge_rounded,
+                  color: igsBlue,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Prêt à grouper vos tickets ?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.montserrat(
+                  color: darkBrown,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ils seront réunis sous un seul code QR pour faciliter le paiement.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.montserrat(
+                  color: Colors.grey.shade600,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F8FF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: igsBlue.withOpacity(0.12)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildGroupingSummary(
+                        Icons.confirmation_num_outlined,
+                        '$selectedCount',
+                        'Tickets',
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: Colors.grey.shade300),
+                    Expanded(
+                      child: _buildGroupingSummary(
+                        Icons.account_balance_wallet_outlined,
+                        '${amount.toStringAsFixed(0)} F',
+                        'Montant total',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(sheetContext, true),
+                  icon: const Icon(Icons.check_circle_outline_rounded),
+                  label: const Text('Confirmer le groupage'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: igsBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    textStyle: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(sheetContext, false),
+                child: Text(
+                  'Pas maintenant',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result == true;
+  }
+
+  Widget _buildGroupingSummary(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, color: igsBlue, size: 20),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: GoogleFonts.montserrat(
+            color: darkBrown,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            color: Colors.grey.shade600,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showExportMenu() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Actions du chéquier',
+                style: GoogleFonts.montserrat(
+                  color: darkBrown,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Gérez le PDF complet de ce chéquier',
+                style: GoogleFonts.montserrat(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _buildExportAction(
+                context: sheetContext,
+                value: 'download',
+                icon: Icons.download_rounded,
+                color: igsBlue,
+                title: 'Télécharger le PDF',
+                subtitle: 'Enregistrer le chéquier sur votre appareil',
+              ),
+              const SizedBox(height: 12),
+              _buildExportAction(
+                context: sheetContext,
+                value: 'share',
+                icon: Icons.ios_share_rounded,
+                color: igsYellow,
+                title: 'Envoyer le PDF',
+                subtitle: 'Partager le chéquier avec une autre personne',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+    final exportUrl = "${ApiConfig.baseUrl}/chequiers/${widget.groupId}/export";
+    if (action == 'download') {
+      await ExportService().downloadExport(
+        context,
+        exportUrl,
+        "Chequier_${widget.groupId}",
+      );
+    } else {
+      final confirmed = await _confirmChequierShare();
+      if (!confirmed || !mounted) return;
+      await ExportService().shareExport(
+        context,
+        '$exportUrl?action=share',
+        "Chequier_${widget.groupId}",
+        subject: 'PDF du chéquier',
+        text: 'Voici le PDF complet de votre chéquier.',
+      );
+    }
+  }
+
+  Future<bool> _confirmChequierShare() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: igsBlue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.share_outlined, color: igsBlue, size: 34),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Envoyer ce chéquier ?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.montserrat(
+                  color: darkBrown,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Après l’envoi, ce chéquier ne sera plus visible dans votre liste actuelle. Il restera toutefois associé à votre compte d’origine.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.montserrat(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(sheetContext, true),
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('Oui, envoyer le chéquier'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: igsBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(sheetContext, false),
+                child: Text(
+                  'Pas maintenant',
+                  style: GoogleFonts.montserrat(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result == true;
+  }
+
+  Widget _buildExportAction({
+    required BuildContext context,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+  }) {
+    return Material(
+      color: color.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.pop(context, value),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 25),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.montserrat(
+                        color: darkBrown,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey.shade600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey.shade500),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -175,64 +587,28 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
           actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onSelected: (value) async {
-  if (value == 'download') {
-    final exportUrl = "${ApiConfig.baseUrl}/chequiers/${widget.groupId}/export";
-    
-    // --- BLOC DE DEBUG ---
-    print("--- TENTATIVE D'EXPORT ---");
-    print("URL d'export : $exportUrl");
-    print("ID du groupe utilisé : ${widget.groupId}");
-    
-    try {
-      // On récupère les headers pour voir si le Token est bien là
-      final headers = await ApiHeaders.getHeaders();
-      print("Headers envoyés : $headers");
-
-      // On fait un test manuel avant de laisser le service de téléchargement prendre le relais
-      final testResponse = await http.get(Uri.parse(exportUrl), headers: headers);
-      
-      print("Code de réponse : ${testResponse.statusCode}");
-      print("Corps de réponse (si erreur) : ${testResponse.body}");
-      
-      if (testResponse.statusCode == 200) {
-        print("Succès ! Lancement du téléchargement réel...");
-        // Si le test est OK, on lance le vrai téléchargement
-        ExportService().downloadExport(
-          context,
-          exportUrl,
-          "Chequier_${widget.groupId}",
-        );
-      } else {
-        print("ERREUR : Le serveur renvoie une erreur sur cette route.");
-      }
-    } catch (e) {
-      print("ERREUR FATALE lors de l'appel : $e");
-    }
-    print("--- FIN DEBUG EXPORT ---");
-  }
-},
-              itemBuilder: (BuildContext context) => [
-                PopupMenuItem<String>(
-                  value: 'download',
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.picture_as_pdf_rounded,
-                        color: Colors.redAccent,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        "Télécharger PDF",
-                        style: GoogleFonts.montserrat(fontSize: 14),
-                      ),
-                    ],
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Tooltip(
+                message: 'Télécharger ou envoyer le chéquier',
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    onPressed: _showExportMenu,
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.share_outlined,
+                      color: Colors.white,
+                      size: 23,
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
           ],
           bottom: TabBar(
@@ -370,6 +746,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   final selection = tickets
                       .where((t) => t['selected'])
                       .toList();
+                final isGrouping = selection.length > 1;
+                if (isGrouping &&
+                  !await _confirmGrouping(selection.length, totalSelected)) {
+                return;
+                }
                   bool isAlreadyGrouped =
                       selection.length == 1 &&
                       selection.first['nature'] == "GROUPE";
@@ -522,7 +903,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Ticket ${ticket['nature']} N° ${ticket['id']}',
+                              'Ticket ${ticket['id']}',
                               style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,

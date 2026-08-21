@@ -133,28 +133,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
           const SizedBox(height: 30),
 
-          // Section Mon Portefeuille
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Mon Portefeuille",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[500],
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _buildWalletCard(),
-              ],
-            ),
-          ),
+          // // Section Mon Portefeuille
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 20),
+          //   child: Column(
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       Text(
+          //         "Mon Portefeuille",
+          //         style: GoogleFonts.montserrat(
+          //           fontSize: 13,
+          //           fontWeight: FontWeight.w700,
+          //           color: Colors.grey[500],
+          //           letterSpacing: 0.5,
+          //         ),
+          //       ),
+          //       const SizedBox(height: 10),
+          //       // _buildWalletCard(),
+          //     ],
+          //   ),
+          // ),
 
-          const SizedBox(height: 24),
+          // const SizedBox(height: 24),
 
           // Options du menu
           Padding(
@@ -223,53 +223,53 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildWalletCard() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.black, igsBlue],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.add_card_rounded, color: Colors.white, size: 24),
-        ),
-        title: Text(
-          "SKY Paiement",
-          style: GoogleFonts.montserrat(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        subtitle: Text(
-          "Gérez votre compte SKY",
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.75),
-          ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white),
-        onTap: () {},
-      ),
-    );
-  }
+  // Widget _buildWalletCard() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       gradient: LinearGradient(
+  //         colors: [Colors.black, igsBlue],
+  //         begin: Alignment.topCenter,
+  //         end: Alignment.bottomCenter,
+  //       ),
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.3),
+  //           blurRadius: 12,
+  //           offset: const Offset(0, 6),
+  //         ),
+  //       ],
+  //     ),
+  //     child: ListTile(
+  //       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+  //       leading: Container(
+  //         padding: const EdgeInsets.all(10),
+  //         decoration: BoxDecoration(
+  //           color: Colors.white.withOpacity(0.15),
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         child: const Icon(Icons.add_card_rounded, color: Colors.white, size: 24),
+  //       ),
+  //       title: Text(
+  //         "SKY Paiement",
+  //         style: GoogleFonts.montserrat(
+  //           fontSize: 15,
+  //           fontWeight: FontWeight.w700,
+  //           color: Colors.white,
+  //         ),
+  //       ),
+  //       subtitle: Text(
+  //         "Gérez votre compte SKY",
+  //         style: GoogleFonts.montserrat(
+  //           fontSize: 12,
+  //           color: Colors.white.withOpacity(0.75),
+  //         ),
+  //       ),
+  //       trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white),
+  //       onTap: () {},
+  //     ),
+  //   );
+  // }
 
   Widget _buildMenuTile(IconData icon, String title, VoidCallback onTap, {bool isDanger = false}) {
     Color itemColor = isDanger ? Colors.redAccent : igsBlue;

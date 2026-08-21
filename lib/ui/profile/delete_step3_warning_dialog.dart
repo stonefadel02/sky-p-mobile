@@ -33,7 +33,7 @@ class DeleteStep3WarningDialog extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildBulletItem("La suppression définitive de vos données personnelles."),
-          _buildBulletItem("L'annulation de tous vos carnet de bon d’essence et tickets actifs."),
+          _buildBulletItem("L'annulation de tous vos chéquiers et tickets actifs."),
           _buildBulletItem("La perte de l'accès à l'historique de vos consommations."),
           _buildBulletItem("Cette action est irréversible."),
         ],

@@ -33,9 +33,10 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
   bool _isSaving = false;
   bool _showChequeForm = false;
   int _paymentAmount = 0;
+  int _selectedAmount = 1500;
   String? _qrCodeUrl;
 
-  static const double _minAmount = 1000;
+  static const int _ticketAmount = 1500;
 
   @override
   void initState() {
@@ -50,17 +51,12 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
     super.dispose();
   }
 
-  bool get _isAmountValid =>
-      (double.tryParse(_amountController.text) ?? 0) >= _minAmount;
+  bool get _isAmountValid => _selectedAmount == _ticketAmount;
 
   void _startPayment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final double amount = double.parse(_amountController.text);
-    if (amount <= 0) {
-      _showSnackBar("Le montant doit être supérieur à 0", Colors.orange);
-      return;
-    }
+    final int amount = _selectedAmount;
 
     if (amount >= 1000000) {
       setState(() {
@@ -165,7 +161,7 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
         );
       } else {
         final Map<String, dynamic> requestBody = {
-          "price": double.parse(_amountController.text),
+          "price": _selectedAmount,
           "label": _labelController.text,
           "transaction_id": transactionId,
           "payment_status": paymentStatus,
@@ -198,18 +194,21 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
         );
       } else {
         CustomQuickAlert.dismiss();
-        String errorMsg = "Erreur serveur : ${response.statusCode}";
+        String? backendMessage;
         try {
           final resData = jsonDecode(response.body);
-          errorMsg = resData['message'] ?? errorMsg;
+          backendMessage = resData['message']?.toString();
         } catch (_) {}
-        IgsAlerts.showError(errorMsg);
+        IgsAlerts.showError(IgsAlerts.friendlyError(
+          statusCode: response.statusCode,
+          backendMessage: backendMessage,
+        ));
       }
     } catch (e, stackTrace) {
       print("❌ [EXPRESS TICKET ERROR]: $e");
       print(stackTrace);
       CustomQuickAlert.dismiss();
-      IgsAlerts.showError("Erreur de connexion au serveur");
+      IgsAlerts.showError(IgsAlerts.friendlyError(error: e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -309,14 +308,71 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
           ),
           const SizedBox(height: 25),
           _buildInputLabel("Montant du ticket valeur (FCFA)"),
-          _buildTextField(
-            _amountController,
-            "",
-            Icons.payments_rounded,
-            isNumber: true,
-          ),
+          _buildAmountCard(),
           const SizedBox(height: 40),
           _buildSubmitButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAmountCard() {
+    final bool isSelected = _selectedAmount == _ticketAmount;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedAmount = _ticketAmount;
+          _amountController.text = _ticketAmount.toString();
+        });
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: (MediaQuery.of(context).size.width / 3) - 22,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: isSelected ? igsBlue.withOpacity(0.05) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.green : Colors.grey.withOpacity(0.2),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.payments_rounded,
+                  color: isSelected ? Colors.green : Colors.grey[400],
+                  size: 20,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "1 500 FCFA",
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: isSelected ? Colors.green : darkBrown,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isSelected)
+            Positioned(
+              top: -5,
+              right: -5,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 11),
+              ),
+            ),
         ],
       ),
     );
@@ -382,7 +438,7 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
               ),
               const SizedBox(height: 25),
               Text(
-                "${_amountController.text} FCFA",
+                "$_selectedAmount FCFA",
                 style: GoogleFonts.montserrat(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,

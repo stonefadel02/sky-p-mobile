@@ -165,40 +165,39 @@ class _GroupListPageState extends State<GroupListPage> {
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         print("Données reçues pour les chéquiers : $decoded");
-        List<dynamic> data = [];
-        if (decoded is List)
-          data = decoded;
-        else if (decoded is Map) {
-          data =
-              decoded['chequiers'] ??
-              decoded['requests'] ??
-              decoded['data'] ??
-              decoded['demandes'] ??
-              [decoded];
-        }
+        final data = _extractCollection(decoded, const [
+          'chequiers',
+          'requests',
+          'demandes',
+          'data',
+          'items',
+          'results',
+        ]);
         if (_selectedFilter != 'approved') {
           return data
-              .where(
-                (d) =>
-                    d['status'].toString().toLowerCase() ==
-                    _selectedFilter.toLowerCase(),
-              )
+              .whereType<Map>()
+              .where((d) => d['status'].toString().toLowerCase() == _selectedFilter.toLowerCase())
               .toList();
         }
-        List<dynamic> enriched = await Future.wait(
-          data.map((item) async {
+        final enriched = await Future.wait<Map<String, dynamic>?>(
+          data.whereType<Map>().map((item) async {
             try {
               final header = await ApiHeaders.getHeaders();
               final detailResponse = await IgsHttpClient.get(
-                Uri.parse("${ApiConfig.baseUrl}/chequiers/${item['id']}"),
+                Uri.parse("${ApiConfig.baseUrl}/chequiers/${item['id']}/tickets"),
                 forceRefresh: true,
                 headers: header,
               );
               if (detailResponse.statusCode == 200) {
                 final detail = json.decode(detailResponse.body);
-                final List tickets = detail['tickets'] ?? [];
+                final tickets = _extractCollection(detail, const [
+                  'tickets',
+                  'data',
+                  'items',
+                  'results',
+                ]);
                 final int utilises = tickets
-                    .where((t) => t['used'] == true)
+                    .where((t) => _isUsed(t))
                     .length;
                 final int restants = tickets.length - utilises;
                 return {
@@ -207,18 +206,49 @@ class _GroupListPageState extends State<GroupListPage> {
                   'tickets_used': utilises,
                 };
               }
-            } catch (_) {}
-            return item;
+              if (detailResponse.statusCode == 404) return null;
+            } catch (_) {
+              return Map<String, dynamic>.from(item);
+            }
+            return Map<String, dynamic>.from(item);
           }),
         );
 
-        return enriched;
+        return enriched.whereType<Map<String, dynamic>>().toList();
       } else {
         throw Exception('Erreur serveur');
       }
     } catch (e) {
       throw Exception('Erreur de connexion');
     }
+  }
+
+  List<dynamic> _extractCollection(dynamic value, List<String> keys) {
+    if (value is List) return value;
+    if (value is Map) {
+      for (final key in keys) {
+        final nested = value[key];
+        if (nested is List) return nested;
+        if (nested is Map) {
+          final extracted = _extractCollection(nested, keys);
+          if (extracted.isNotEmpty) return extracted;
+        }
+      }
+      final indexed = value.values
+          .whereType<Map>()
+          .where((item) => item.containsKey('id'))
+          .toList();
+      if (indexed.isNotEmpty) return indexed;
+      if (value.containsKey('id')) return [value];
+    }
+    return [];
+  }
+
+  bool _isUsed(dynamic ticket) {
+    if (ticket is! Map) return false;
+    final value = ticket['used'] ?? ticket['is_used'];
+    if (value is bool) return value;
+    return value?.toString().toLowerCase() == 'true' || value?.toString() == '1';
   }
 
   @override
@@ -291,7 +321,6 @@ class _GroupListPageState extends State<GroupListPage> {
                       "MES CHÉQUIERS",
                       style: GoogleFonts.montserrat(
                         color: igsBlue,
-                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

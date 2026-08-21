@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/header.dart';
 import 'package:sky_p/ui/widgets/appBarGeneral.dart';
@@ -100,12 +101,15 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
         }
       } else {
         // ERREUR SERVEUR (404, 500, etc.)
-        _showCustomError("Impossible de valider ce ticket pour le moment (${response.statusCode}).");
+        _showCustomError(IgsAlerts.friendlyError(
+          statusCode: response.statusCode,
+          fallback: 'Impossible de valider ce ticket pour le moment.',
+        ));
       }
     } catch (e, stack) {
       print("❌ [DEBUG SCANNER ERREUR] Exception : $e");
       print("❌ [DEBUG SCANNER STACK] : $stack");
-      _showCustomError("Erreur de connexion. Vérifiez votre internet. ($e)");
+      _showCustomError(IgsAlerts.friendlyError(error: e));
     } finally {
       if (mounted) setState(() => isProcessing = false);
     }

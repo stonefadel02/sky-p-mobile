@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/header.dart';
 import 'package:sky_p/ui/client/chequier/cheque_payment_form.dart';
@@ -33,10 +34,10 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
         .replaceAll(' ', '.');
   }
 
-  int? _selectedUnitPrice;
-  final List<int> _unitPrices = [1000, 5000, 10000, 50000, 100000];
+  int? _selectedUnitPrice = 1500;
+  final List<int> _unitPrices = [1500];
   int? _selectedTotalValue;
-  final List<int> _totalValues = [50000, 250000, 500000, 2500000, 5000000];
+  final List<int> _totalValues = [75000, 150000, 225000, 300000];
 
   int get _calculatedTicketsCount {
     if (_selectedUnitPrice == null || _selectedTotalValue == null) return 0;
@@ -162,7 +163,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
         CustomQuickAlert.success(
           title: "Félicitations !",
           message:
-              "Votre commande de carnet de bon d’essence a été bien enregistrée. Nos équipes se chargent de son traitement",
+              "Votre commande de chéquier a été bien enregistrée. Nos équipes se chargent de son traitement",
           confirmBtnColor: igsBlue,
           onConfirm: () {
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -173,12 +174,15 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
       } else {
         print("ERREUR SERVEUR DÉTAILLÉE: ${response.body}");
         if (mounted) setState(() => _isProcessing = false);
-        String errorMsg = "Erreur serveur (${response.statusCode})";
+        String? backendMessage;
         try {
           final data = jsonDecode(response.body);
-          errorMsg = data['message'] ?? errorMsg;
+          backendMessage = data['message']?.toString();
         } catch (_) {}
-        _showErrorAlert(errorMsg);
+        _showErrorAlert(IgsAlerts.friendlyError(
+          statusCode: response.statusCode,
+          backendMessage: backendMessage,
+        ));
       }
     } catch (e, stackTrace) {
       print("❌ ERREUR RÉSEAU [tentative $attempt/$maxAttempts]");
@@ -245,7 +249,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Demande de carnet de bon d’essence".toUpperCase(),
+                        "Demande de chéquier".toUpperCase(),
                         style: GoogleFonts.montserrat(
                           color: darkBrown,
                           fontSize: 24,
@@ -254,7 +258,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Choisissez la valeur de votre ticket et le montant total du carnet de bon d’essence.",
+                        "Choisissez la valeur de votre ticket et le montant total du chéquier.",
                         style: GoogleFonts.montserrat(
                           color: Colors.grey[600],
                           fontSize: 14,
@@ -274,7 +278,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
 
                       const SizedBox(height: 30),
 
-                      _buildInputLabel("2. Valeur totale du carnet de bon d’essence"),
+                      _buildInputLabel("2. Valeur totale du chéquier"),
                       _buildGridCards(
                         values: _totalValues,
                         selectedValue: _selectedTotalValue,
@@ -462,7 +466,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
 
   void _onPayPressed() async {
     if (_calculatedTicketsCount <= 0 || _selectedTotalValue == null) {
-      _showSnackBar("Veuillez sélectionner les deux montants", Colors.orange);
+      _showSnackBar("Veuillez sélectionner le montant du chéquier", Colors.orange);
       return;
     }
 
@@ -486,7 +490,7 @@ class _RequestChequierPageState extends State<RequestChequierPage> {
           apikey: ApiConfig.kkiapayPublicKey,
           sandbox: ApiConfig.isSandbox,
           callback: _handlePaymentResponse,
-          reason: "Achat carnet de bon d’essence SKY-P",
+          reason: "Achat chéquier SKY-P",
           theme: "#3473E4",
           countries: const ["BJ"],
           paymentMethods: const ["momo", "card"],

@@ -27,6 +27,7 @@ dependencies:
   dio: ^5.9.1
   path_provider: ^2.1.5
   open_filex: ^4.7.0
+  share_plus: ^11.1.0
   quickalert: ^1.1.0
   jwt_decoder: ^2.0.1
   firebase_core: ^4.4.0
@@ -64,30 +65,29 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/logo.jpeg 
+  image: assets/logo.jpeg
   android_12:
     color: "#FFFFFF"
     image: assets/splash.png
-  fullscreen: true    
+  fullscreen: true
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/splash.png
-    - assets/logoremovebg.png
-    - assets/logo.jpeg
-    - assets/lotties/no_internet.json
-    - assets/lotties/empty_box.json
-    - .env.local
-    - shorebird.yaml
-
+  - assets/splash.png
+  - assets/logoremovebg.png
+  - assets/logo.jpeg
+  - assets/lotties/no_internet.json
+  - assets/lotties/empty_box.json
+  - .env.local
+  - shorebird.yaml
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/logo.jpeg"
   adaptive_icon_foreground: "assets/lion_foreground.png"
-  remove_alpha_ios: true 
+  remove_alpha_ios: true
   notification_icon:
     enabled: true
     image_path: "assets/notification_icon.png"

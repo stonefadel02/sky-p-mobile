@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sky_p/config/api_config.dart';
+import 'package:sky_p/core/theme/ui_helpers.dart';
 import 'package:sky_p/services/api_service.dart';
 import 'package:sky_p/services/header.dart';
 import 'package:sky_p/ui/widgets/state_handler.dart';
@@ -52,13 +53,13 @@ class _TransferHistoryPageState extends State<TransferHistoryPage> {
         });
       } else {
         setState(() {
-          errorMessage = "Erreur serveur (${response.statusCode})";
+          errorMessage = IgsAlerts.friendlyError(statusCode: response.statusCode);
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        errorMessage = "Erreur de connexion : $e";
+        errorMessage = IgsAlerts.friendlyError(error: e);
         isLoading = false;
       });
     }

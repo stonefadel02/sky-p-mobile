@@ -10,12 +10,14 @@ class IgsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showLogout;
   final VoidCallback? onBack;
+  final List<Widget>? actions;
 
   const IgsAppBar({
     super.key,
     required this.title,
     this.showLogout = true,
     this.onBack,
+    this.actions,
   });
 
   static const Color igsBlue = Color(0xFF3473E4);
@@ -103,11 +105,17 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-              if (showLogout)
-                IconButton(
-                  icon: const Icon(Icons.logout_rounded, color: igsBlue),
-                  onPressed: () => _handleLogout(context),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (actions != null) ...actions!,
+                  if (showLogout)
+                    IconButton(
+                      icon: const Icon(Icons.logout_rounded, color: igsBlue),
+                      onPressed: () => _handleLogout(context),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
